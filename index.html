@@ -1,0 +1,188 @@
+<html>
+<head>
+<style type='text/css'>
+body {
+	margin: 0px;
+}
+input {
+	margin: 1px;
+}
+</style>
+</head>
+<body>
+<table border='0' cellpadding='0' cellspacing='0'><tr>
+<td>
+<img src='screenshot.png?r=0&imageFormat=JPEG' id='screenshot' />
+</td>
+<td style='vertical-align: top; padding-left: 16px'>
+<div>
+Continuously reload image every <input id='autoreload' size='4'  value='-1' onchange='reloadImage()' onkeypress='var event = arguments[0] || window.event; event.stopPropagation()' />secs (-1 = don't reload)
+<br />
+Load image after clicking: <input id='clickreload' size='4'  value='1.5' onchange='reloadImage()' onkeypress='var event = arguments[0] || window.event; event.stopPropagation()' />secs
+<br />
+<input type='button' style='font-size: 20px' value='&#8635;' title='Reload Image (F5)' onclick='reloadImage()' />
+<br />
+<input type='button' value='&lt;' title='Back' onclick='press(4)' />
+<br />
+<input type='button' value='&#8962;' title='Home' onclick='press(3)' />
+<br />
+<input type='button' value='&#9776;' title='Menu' onclick='press(1)' />
+<br />
+<input type='button' value='&#x25B2;' title='Vol up' onclick='press(24)' />
+<br />
+<input type='button' value='&#x25BC;' title='Vol down' onclick='press(25)' />
+<br />
+<input type='button' value='&#x26A1;' title='Power' onclick='press(26)' />
+<br />
+<input type='button' value='&crarr;' title='Rotate' onclick='rotateImage()' /><span id='rotate'></span>
+<br />
+</div>
+</td></table>
+<br />
+
+<script>
+var screenshot=document.getElementById('screenshot');
+var autoreload=document.getElementById('autoreload');
+var clickreload=document.getElementById('clickreload');
+var rotateText=document.getElementById('rotate');
+screenshot.ondragstart = function() { return false; };
+
+var rotate=0;
+
+function rotateImage() {
+	rotate=(rotate+90)%360;
+	rotateText.innerHTML=rotate;
+	reloadImage();
+}
+
+var autoReloadRunning=false;
+var imageFormat='JPEG';
+
+function reloadImage() {
+	if(!autoReloadRunning) autoReload();
+}
+
+var reloadTimeout=null;
+function autoReload() {
+	var img=new Image()
+	autoReloadRunning=true;
+	var onloadDone=false;
+	var onload=function() {
+		if(onloadDone) return;
+		onloadDone=true;
+		if(loadTimeout)
+			clearInterval(loadTimeout);
+		var timeout=5000;
+		try {
+			timeout=parseFloat(autoreload.value)*1000;
+		} catch(e) { }
+		if(timeout<0) {
+			autoReloadRunning=false;
+			return;
+		}
+		if(reloadTimeout) clearInterval(reloadTimeout);
+		reloadTimeout=setTimeout(function() {
+			reloadTimeout=null;
+			autoReload();
+		},timeout);
+	};
+	var loadTimeout=setTimeout(function() { 
+		loadTimeout=null; onload(); 
+	},10000);
+	img.onload=onload;
+	img.src='screenshot.png?imageFormat='+imageFormat+'&r='+rotate+'&rand='+Math.random()
+	screenshot.src=img.src;
+}
+
+autoReload();
+
+var keyBuf='';
+var keyBufSend=null
+function queueKey(key) {
+	keyBuf+=key;
+	if(keyBufSend) {
+		clearInterval(keyBufSend);
+	}
+	keyBufSend=setTimeout(function() {
+		keyBufSend=null;
+		sendReq("/type?k="+encodeURIComponent(keyBuf));
+		keyBuf='';
+	},300);
+}
+
+function sendReq(url) {
+	var oReq = new XMLHttpRequest();
+//	oReq.addEventListener("load", reqListener);
+	oReq.open("GET", url);
+	oReq.send();
+	oReq.onload=function() {
+		var secs=parseFloat(clickreload.value);
+		setTimeout(reloadImage,(isNaN(secs) && secs>=0)?1500:(secs*1000));
+	};
+}
+
+function press(num) {
+	sendReq('/press?k='+num);
+}
+
+var mouseDown=null;
+//screenshot.addEventListener('mousemove',function(evt) { });
+//document.addEventListener('keypress',function(evt) { 
+window.onkeypress = function(evt) { 
+	if(evt.ctrlKey || evt.altKey || evt.metaKey) return true;
+	if(evt.keyCode==13) {
+		// enter
+		sendReq("/press?k=66");
+		return false;
+	}
+	if(evt.keyCode==8) {
+		// del/backspace
+		sendReq("/press?k=67");
+		return false;
+	}
+	if(evt.keyCode==36) {
+		// home
+		sendReq("/press?k=3");
+		return false;
+	}
+	if(evt.keyCode==35) {
+		// end = menu
+		sendReq("/press?k=1");
+		return false;
+	}
+	if(evt.keyCode==27) {
+		// escape = back
+		sendReq("/press?k=4");
+		return false;
+	}
+	if(evt.keyCode==116) {
+		// F5
+		reloadImage();
+		return false;
+	}
+	if(evt.charCode!=0) {
+		queueKey(String.fromCharCode(evt.charCode));
+		return false;
+	}
+	return true;
+};
+screenshot.addEventListener('mousedown',function(evt) {
+	mouseDown={x:evt.pageX,y:evt.pageY,time:new Date().getTime()};
+});
+screenshot.addEventListener('mouseup',function(evt) {
+	var now=new Date().getTime();
+	if(!mouseDown) return;
+	var diffX=Math.abs(mouseDown.x-evt.pageX);
+	var diffY=Math.abs(mouseDown.y-evt.pageY);
+	if(diffX<2 && diffY<2) {
+		var msecs=now-mouseDown.time;
+		sendReq("/touch?l="+evt.pageX+','+evt.pageY+','+msecs);
+	} else {
+		var msecs=now-mouseDown.time;
+		sendReq("/swipe?l="+mouseDown.x+','+mouseDown.y+','+evt.pageX+','+evt.pageY+','+msecs);
+	}
+	mouseDown=null;
+});
+</script>
+</body>
+</html>
