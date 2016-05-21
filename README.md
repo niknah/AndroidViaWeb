@@ -1,6 +1,6 @@
-This program allows you to control your android device via a slow internet connection.
+This program allows you to control your android device via a slow internet connection via adb, no need to install any apps or extra packages.
 
-If you have a fast internet connection, you can use VNC which only sends you the "differences" between each image, but it doesn't let you choose how often the images are sent which will be jerky with a slow internet connection.
+If you have a fast internet connection, you can use VNC or similar which only sends you the "differences" between each image, but it doesn't let you choose how often the images are sent which will be jerky with a slow internet connection.
 
 
 ## To install...
