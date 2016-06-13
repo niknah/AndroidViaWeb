@@ -124,6 +124,7 @@ class AndroidViaWeb(object):
     def screenshotPng(self, rotate, imageFormat):
         # *** Bad: on some devices, this is compressing in png then uncompressing to PIL, then re-compressing again.
         image = self.device.takeSnapshot()
+        rotate = int(rotate)
         transpose = None
         if rotate == 90:
             transpose = Image.ROTATE_90
