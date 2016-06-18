@@ -52,7 +52,7 @@ var rotate=0;
 function rotateImage() {
 	rotate=(rotate+90)%360;
 	rotateText.innerHTML=rotate;
-	reloadImage();
+	autoReload();
 }
 
 var autoReloadRunning=false;
