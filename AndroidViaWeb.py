@@ -104,7 +104,7 @@ class AndroidViaWeb(object):
         self.screenshotRe = re.compile(r'^/screenshot.png\?(.+)$')
 
     def connect(self):
-        (self.device, self.serialno) = ViewClient.connectToDeviceOrExit(serialno=self.serial)
+        (self.device, self.serialno) = ViewClient.connectToDeviceOrExit(serialno=self.serial,ignoreversioncheck=True)
 
     def start(self):
         self.parseArgs()
