@@ -128,44 +128,49 @@ function press(num) {
 var mouseDown=null;
 //screenshot.addEventListener('mousemove',function(evt) { });
 //document.addEventListener('keypress',function(evt) { 
-window.onkeypress = function(evt) { 
-	if(evt.ctrlKey || evt.altKey || evt.metaKey) return true;
-	if(evt.keyCode==13) {
+window.onkeydown = function(evt) { 
+	if(!processKey(evt)) {
+		evt.preventDefault();
+	}
+};
+
+function processKey(evt) {
+	if(evt.key=='Enter') {
 		// enter
 		sendReq("/press?k=66");
 		return false;
-	}
-	if(evt.keyCode==8) {
+	} else if(evt.key=='Backspace') {
 		// del/backspace
 		sendReq("/press?k=67");
 		return false;
-	}
-	if(evt.keyCode==36) {
+	} else if(evt.key=='Home') {
 		// home
 		sendReq("/press?k=3");
 		return false;
-	}
-	if(evt.keyCode==35) {
+	} else if(evt.key=='End') {
 		// end = menu
 		sendReq("/press?k=1");
 		return false;
-	}
-	if(evt.keyCode==27) {
+	} else if(evt.key=='Escape') {
 		// escape = back
 		sendReq("/press?k=4");
 		return false;
-	}
-	if(evt.keyCode==116) {
+	} else if(evt.key=='F5') {
 		// F5
 		reloadImage();
 		return false;
-	}
-	if(evt.charCode!=0) {
-		queueKey(String.fromCharCode(evt.charCode));
+	} else if(evt.key.length==1) {
+		queueKey(evt.key);
 		return false;
 	}
 	return true;
+}
+/*
+window.onkeypress = function(evt) { 
+	if(evt.ctrlKey || evt.altKey || evt.metaKey) return true;
+	return true;
 };
+*/
 screenshot.addEventListener('mousedown',function(evt) {
 	mouseDown={x:evt.pageX,y:evt.pageY,time:new Date().getTime()};
 });
