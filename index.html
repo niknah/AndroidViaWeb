@@ -57,6 +57,10 @@ function rotateImage() {
 
 var autoReloadRunning=false;
 var imageFormat='JPEG';
+var framebuffer=0;
+if(location.search.indexOf('framebuffer=1')>=0) {
+	framebuffer=1;
+}
 
 function reloadImage() {
 	if(!autoReloadRunning) autoReload();
@@ -90,7 +94,7 @@ function autoReload() {
 		loadTimeout=null; onload(); 
 	},10000);
 	img.onload=onload;
-	img.src='screenshot.png?imageFormat='+imageFormat+'&r='+rotate+'&rand='+Math.random()
+	img.src='screenshot.png?imageFormat='+imageFormat+'&framebuffer='+framebuffer+'&r='+rotate+'&rand='+Math.random()
 	screenshot.src=img.src;
 }
 

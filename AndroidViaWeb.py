@@ -8,6 +8,7 @@ import os
 import time
 import urllib
 import urlparse
+import traceback
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 from PIL import Image
 homeDir = os.path.dirname(os.path.realpath(__file__))
@@ -37,6 +38,7 @@ class MyHandler(BaseHTTPRequestHandler):
             except Exception,e:
                 print 'error:'+str(e)
                 print 'error0:'+str(e.args[0])
+                traceback.print_exc()
                 print("reconnect, wait...")
                 time.sleep(5)
                 self.main.connect()
@@ -44,7 +46,7 @@ class MyHandler(BaseHTTPRequestHandler):
 
     def do_GET2(self):
         self.main = self.server.androidViaWeb
-        if self.path == '/':
+        if self.main.indexRe.match(self.path):
             self.defaultHeader('text/html')
             # Send the html message
             f = open(homeDir+"/index.html")
@@ -55,7 +57,10 @@ class MyHandler(BaseHTTPRequestHandler):
         if screenshotM is not None:
             q = urlparse.parse_qs(screenshotM.group(1))
             imageFormat = q['imageFormat'][0]
-            img = self.main.screenshotPng(q['r'][0], imageFormat)
+            framebuffer = None
+            if q.has_key('framebuffer'):
+                framebuffer = bool(int(q['framebuffer'][0]))
+            img = self.main.screenshotPng(q['r'][0], imageFormat, framebuffer)
             self.defaultHeader('image/'+imageFormat)
             self.wfile.write(img)
             return
@@ -102,6 +107,7 @@ class AndroidViaWeb(object):
         self.typeRe = re.compile(r'^/(press|type)\?k=(\S+)$')
         self.clickRe = re.compile(r'^/(touch|swipe)\?l=([0-9,]+)$')
         self.screenshotRe = re.compile(r'^/screenshot.png\?(.+)$')
+        self.indexRe = re.compile(r'^/(\?.*$|$)')
 
     def connect(self):
         (self.device, self.serialno) = ViewClient.connectToDeviceOrExit(serialno=self.serial,ignoreversioncheck=True)
@@ -121,9 +127,11 @@ class AndroidViaWeb(object):
             int(arr[4])
             )
 
-    def screenshotPng(self, rotate, imageFormat):
+    def screenshotPng(self, rotate, imageFormat, framebuffer):
         # *** Bad: on some devices, this is compressing in png then uncompressing to PIL, then re-compressing again.
-        image = self.device.takeSnapshot()
+        # Need to reconnect after takeSnapshot...
+        # https://github.com/dtmilano/AndroidViewClient/issues/46
+        image = self.device.takeSnapshot(reconnect=True, force_adb_framebuffer=framebuffer)
         rotate = int(rotate)
         transpose = None
         if rotate == 90:
