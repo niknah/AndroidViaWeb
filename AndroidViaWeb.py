@@ -143,7 +143,10 @@ class AndroidViaWeb(object):
         if transpose is not None:
             image = image.transpose(transpose)
         output = StringIO.StringIO()
-        image.save(output, imageFormat)
+        if(imageFormat =='JPEG'):
+            image.save(output, imageFormat, quality=10)
+        else:
+            image.save(output, imageFormat)
         contents = output.getvalue()
         output.close()
         return contents
