@@ -133,6 +133,9 @@ var mouseDown=null;
 //screenshot.addEventListener('mousemove',function(evt) { });
 //document.addEventListener('keypress',function(evt) { 
 window.onkeydown = function(evt) { 
+	if(document.activeElement.tagName=='INPUT') {
+		return;
+	}
 	if(!processKey(evt)) {
 		evt.preventDefault();
 	}
