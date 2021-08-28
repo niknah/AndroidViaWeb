@@ -1,26 +1,31 @@
-# pylint: disable=invalid-name,missing-docstring,super-on-old-class,bad-continuation,too-many-return-statements
+# pylint: disable=invalid-name,missing-docstring,bad-continuation,too-many-return-statements
 
 import sys
 import argparse
+#import StringIO
+import io
 import re
 import os
-import io
 import time
 import urllib
+#import urlparse
 import traceback
-from http.server import BaseHTTPRequestHandler, HTTPServer
 #from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from PIL import Image
 homeDir = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(homeDir+'/AndroidViewClient/src')
 
+# pylint: disable=wrong-import-position
 from com.dtmilano.android.viewclient import ViewClient
+# pylint: enable=wrong-import-position
 
 
 
 class MyHandler(BaseHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         BaseHTTPRequestHandler.__init__(self, *args, **kwargs)
+        self.main = None
 
     #Handler for the GET requests
     def defaultHeader(self, contentType):
@@ -50,7 +55,7 @@ class MyHandler(BaseHTTPRequestHandler):
             self.defaultHeader('text/html')
             # Send the html message
             f = open(homeDir+"/index.html")
-            self.wfile.write(bytes(f.read(),"utf-8"))
+            self.wfile.write(bytes(f.read(), "utf-8"))
             f.close()
             return
         screenshotM = self.main.screenshotRe.match(self.path)
@@ -69,18 +74,18 @@ class MyHandler(BaseHTTPRequestHandler):
         clickM = self.main.clickRe.match(self.path)
         if clickM is None and typeM is None:
             self.send_response(404)
-            self.wfile.write(bytes("404 You are lost","utf-8"))
+            self.wfile.write(bytes("404 You are lost", "utf-8"))
             return
         if clickM is not None:
             if clickM.group(1) == 'touch':
                 self.defaultHeader('application/json')
                 self.main.touch(clickM.group(2).split(','))
-                self.wfile.write(bytes('{"ok":true}',"utf-8"))
+                self.wfile.write(bytes('{"ok":true}', 'utf-8'))
                 return
             elif clickM.group(1) == 'swipe':
                 self.defaultHeader('application/json')
                 self.main.swipe(clickM.group(2).split(','))
-                self.wfile.write(bytes('{"ok":true}',"utf-8"))
+                self.wfile.write(bytes('{"ok":true}', 'utf-8'))
                 return
         elif typeM is not None:
 
@@ -88,17 +93,17 @@ class MyHandler(BaseHTTPRequestHandler):
             if typeM.group(1) == 'type':
                 self.defaultHeader('application/json')
                 self.main.device.type(typeStr)
-                self.wfile.write(bytes('{"ok":true}',"utf-8"))
+                self.wfile.write(bytes('{"ok":true}', 'utf-8'))
                 return
             elif typeM.group(1) == 'press':
                 self.defaultHeader('application/json')
                 self.main.device.press(typeStr)
-                self.wfile.write(bytes('{"ok":true}',"utf-8"))
+                self.wfile.write(bytes('{"ok":true}', 'utf-8'))
                 return
 
 
 
-class AndroidViaWeb(object):
+class AndroidViaWeb():
     def __init__(self):
         self.port = 8080
         self.serial = None
@@ -110,7 +115,9 @@ class AndroidViaWeb(object):
         self.indexRe = re.compile(r'^/(\?.*$|$)')
 
     def connect(self):
-        (self.device, self.serialno) = ViewClient.connectToDeviceOrExit(serialno=self.serial,ignoreversioncheck=True)
+        (self.device, self.serialno) = ViewClient.connectToDeviceOrExit(
+            serialno=self.serial, ignoreversioncheck=True
+            )
 
     def start(self):
         self.parseArgs()
@@ -128,7 +135,9 @@ class AndroidViaWeb(object):
             )
 
     def screenshotPng(self, rotate, imageFormat, framebuffer):
-        # *** Bad: on some devices, this is compressing in png then uncompressing to PIL, then re-compressing again.
+        # *** Bad: on some devices, 
+        #           this is compressing in png then uncompressing to PIL
+        #           then re-compressing again.
         # Need to reconnect after takeSnapshot...
         # https://github.com/dtmilano/AndroidViewClient/issues/46
 #        image = self.device.takeSnapshot(reconnect=True, force_adb_framebuffer=framebuffer)
@@ -144,9 +153,9 @@ class AndroidViaWeb(object):
         if transpose is not None:
             image = image.transpose(transpose)
         output = io.BytesIO()
-        if(imageFormat =='JPEG'):
-            imageRGB = Image.new("RGB", image.size, (0,0,0))
-            imageRGB.paste(image, mask = image.split()[3])
+        if imageFormat == 'JPEG':
+            imageRGB = Image.new("RGB", image.size, (0, 0, 0))
+            imageRGB.paste(image, mask=image.split()[3])
             imageRGB.save(output, imageFormat, quality=10)
         else:
             image.save(output, imageFormat)
@@ -178,7 +187,7 @@ class AndroidViaWeb(object):
             server.serve_forever()
 
         except KeyboardInterrupt as e:
-            print('^C received, shutting down the web server')
+            print('^C received, shutting down the web server', str(e))
             server.socket.close()
 
 

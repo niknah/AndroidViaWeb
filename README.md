@@ -6,8 +6,12 @@ If you have a fast internet connection, you can use VNC or similar which only se
 ## To install...
 
 ```
+git clone https://github.com/niknah/AndroidViaWeb.git
+
 # Install the Android sdk and make sure "adb" is in your path.
-export PATH:$PATH:/opt/android/platform-tools
+export PATH:$PATH:~/Android/Sdk/platform-tools/
+
+pip install culebratester-client
 
 git clone https://github.com/dtmilano/AndroidViewClient.git
 
@@ -16,7 +20,6 @@ python AndroidViaWeb.py
 ```
 
 Go to your web browser and look at http://localhost:8080/
-
 
 If you have multiple Android devices plugged in, use...
 python AndroidViaWeb.py --serial=xxxx
